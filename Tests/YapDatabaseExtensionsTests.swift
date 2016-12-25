@@ -137,23 +137,23 @@ class YapDatabaseReadWriteTransactionTests: ReadWriteBaseTests {
 
 class YapDatabaseConnectionTests: ReadWriteBaseTests {
 
-    var dispatchQueue: dispatch_queue_t!
-    var operationQueue: NSOperationQueue!
+    var dispatchQueue: DispatchQueue!
+    var operationQueue: OperationQueue!
 
     override func setUp() {
         super.setUp()
-        dispatchQueue = dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0)
-        operationQueue = NSOperationQueue()
+        dispatchQueue = DispatchQueue.global(qos: DispatchQoS.QoSClass.default)
+        operationQueue = OperationQueue()
     }
 
     func test__async_read() {
         let db = YapDB.testDatabase()
-        let expectation = expectationWithDescription("Test: \(#function)")
+        let expectation = self.expectation(description: "Test: \(#function)")
 
         db.makeNewConnection().write(item)
         XCTAssertNotNil(Employee.read(db).atIndex(index))
 
-        var received: Employee? = .None
+        var received: Employee? = .none
         db.newConnection().asyncRead({ transaction -> Employee? in
             return transaction.readAtIndex(self.index) as? Employee
         }, queue: dispatchQueue) { (result: Employee?) in
@@ -161,16 +161,16 @@ class YapDatabaseConnectionTests: ReadWriteBaseTests {
             expectation.fulfill()
         }
 
-        waitForExpectationsWithTimeout(3.0, handler: nil)
+        waitForExpectations(timeout: 3.0, handler: nil)
 
         XCTAssertNotNil(received)
     }
 
     func test__async_write() {
         let db = YapDB.testDatabase()
-        let expectation = expectationWithDescription("Test: \(#function)")
+        let expectation = self.expectation(description: "Test: \(#function)")
 
-        var written: Employee? = .None
+        var written: Employee? = .none
         db.makeNewConnection().asyncWrite({ transaction -> Employee? in
             transaction.writeAtIndex(self.index, object: self.item, metadata: self.item.metadata)
             return self.item
@@ -179,7 +179,7 @@ class YapDatabaseConnectionTests: ReadWriteBaseTests {
             expectation.fulfill()
         }
 
-        waitForExpectationsWithTimeout(3.0, handler: nil)
+        waitForExpectations(timeout: 3.0, handler: nil)
 
         XCTAssertNotNil(written)
         XCTAssertNotNil(Employee.read(db).atIndex(index))
@@ -187,7 +187,7 @@ class YapDatabaseConnectionTests: ReadWriteBaseTests {
 
     func test__writeBlockOperation() {
         let db = YapDB.testDatabase()
-        let expectation = expectationWithDescription("Test: \(#function)")
+        let expectation = self.expectation(description: "Test: \(#function)")
 
         var didExecuteWithTransaction = false
         let operation = db.makeNewConnection().writeBlockOperation { transaction in
@@ -197,7 +197,7 @@ class YapDatabaseConnectionTests: ReadWriteBaseTests {
 
         operationQueue.addOperation(operation)
 
-        waitForExpectationsWithTimeout(3.0, handler: nil)
+        waitForExpectations(timeout: 3.0, handler: nil)
         XCTAssertTrue(operation.finished)
         XCTAssertTrue(didExecuteWithTransaction)
     }

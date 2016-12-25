@@ -22,8 +22,8 @@ public struct YapDB {
     
     - returns: a String representing the path to a database in the given search directory, with the given name/suffix.
     */
-    public static func pathToDatabase(directory: NSSearchPathDirectory, name: String, suffix: String? = .None) -> String {
-        let paths = NSSearchPathForDirectoriesInDomains(directory, .UserDomainMask, true)
+    public static func pathToDatabase(_ directory: FileManager.SearchPathDirectory, name: String, suffix: String? = .none) -> String {
+        let paths = NSSearchPathForDirectoriesInDomains(directory, .userDomainMask, true)
         let directory: String = paths.first ?? NSTemporaryDirectory()
         let filename: String = {
             if let suffix = suffix {
@@ -32,7 +32,7 @@ public struct YapDB {
             return "\(name).sqlite"
         }()
 
-        return (directory as NSString).stringByAppendingPathComponent(filename)
+        return (directory as NSString).appendingPathComponent(filename)
     }
 
     /// Type of closure which can perform operations on newly created/opened database instances.
@@ -73,8 +73,8 @@ public struct YapDB {
     
     - returns: the YapDatabase instance.
     */
-    public static func databaseNamed(name: String, operations: DatabaseOperationsBlock? = .None) -> YapDatabase {
-        let db =  YapDatabase(path: pathToDatabase(.DocumentDirectory, name: name, suffix: .None))
+    public static func databaseNamed(_ name: String, operations: DatabaseOperationsBlock? = .none) -> YapDatabase {
+        let db =  YapDatabase(path: pathToDatabase(.documentDirectory, name: name, suffix: .none))
         operations?(db)
         return db
     }
@@ -105,11 +105,11 @@ public struct YapDB {
     
     - returns: the YapDatabase instance.
     */
-    public static func testDatabase(file: String = #file, test: String = #function, operations: DatabaseOperationsBlock? = .None) -> YapDatabase {
-        let path = pathToDatabase(.CachesDirectory, name: (file as NSString).lastPathComponent, suffix: test.stringByTrimmingCharactersInSet(NSCharacterSet(charactersInString: "()")))
+    public static func testDatabase(_ file: String = #file, test: String = #function, operations: DatabaseOperationsBlock? = .none) -> YapDatabase {
+        let path = pathToDatabase(.cachesDirectory, name: (file as NSString).lastPathComponent, suffix: test.trimmingCharacters(in: CharacterSet(charactersIn: "()")))
         assert(!path.isEmpty, "Path should not be empty.")
         do {
-            try NSFileManager.defaultManager().removeItemAtPath(path)
+            try FileManager.default.removeItem(atPath: path)
         }
         catch { }
 
@@ -169,7 +169,7 @@ Identifier for your String identifiers.
 */
 public typealias Identifier = String
 
-extension Identifier: CustomStringConvertible {
+extension Identifier {
     public var description: String { return self }
 }
 
@@ -201,7 +201,7 @@ extension Persistable {
     - parameter key: a `String`
     - returns: a `YapDB.Index` value.
     */
-    public static func indexWithKey(key: String) -> YapDB.Index {
+    public static func indexWithKey(_ key: String) -> YapDB.Index {
         return YapDB.Index(collection: collection, key: key)
     }
 
@@ -216,9 +216,9 @@ extension Persistable {
     - returns: an array of `YapDB.Index` values.
     */
     public static func indexesWithKeys<
-        Keys where
-        Keys: SequenceType,
-        Keys.Generator.Element == String>(keys: Keys) -> [YapDB.Index] {
+        Keys>(_ keys: Keys) -> [YapDB.Index] where
+        Keys: Sequence,
+        Keys.Iterator.Element == String {
             return Set(keys).map { YapDB.Index(collection: collection, key: $0) }
     }
 
@@ -227,7 +227,7 @@ extension Persistable {
     own MetadataType.
     */
     public var metadata: Void? {
-        get { return .None }
+        get { return .none }
         set { }
     }
 
@@ -247,17 +247,17 @@ extension Persistable {
     - returns: a `YapDB.Index`.
     */
     public var index: YapDB.Index {
-        return self.dynamicType.indexWithKey(key)
+        return type(of: self).indexWithKey(key)
     }
 }
 
 // MARK: Functions
 
-public func keyForPersistable<P: Persistable>(persistable: P) -> String {
+public func keyForPersistable<P: Persistable>(_ persistable: P) -> String {
     return persistable.key
 }
 
-public func indexForPersistable<P: Persistable>(persistable: P) -> YapDB.Index {
+public func indexForPersistable<P: Persistable>(_ persistable: P) -> YapDB.Index {
     return persistable.index
 }
 
@@ -272,23 +272,23 @@ public protocol ReadTransactionType {
     - parameter collection: a String. Not optional.
     - returns: an array of String values.
     */
-    func keysInCollection(collection: String) -> [String]
+    func keysInCollection(_ collection: String) -> [String]
 
     /**
     Read the object at the index.
 
     - parameter index: a YapDB.Index.
-    - returns: an `AnyObject` if an item existing in the database for this index.
+    - returns: an `Any` if an item existing in the database for this index.
     */
-    func readAtIndex(index: YapDB.Index) -> AnyObject?
+    func readAtIndex(_ index: YapDB.Index) -> Any?
 
     /**
     Read the metadata at the index.
 
     - parameter index: a YapDB.Index.
-    - returns: an `AnyObject` if a metadata item existing in the database for this index.
+    - returns: an `Any` if a metadata item existing in the database for this index.
     */
-    func readMetadataAtIndex(index: YapDB.Index) -> AnyObject?
+    func readMetadataAtIndex(_ index: YapDB.Index) -> Any?
 }
 
 /// A facade interface for a write transaction.
@@ -298,10 +298,10 @@ public protocol WriteTransactionType: ReadTransactionType {
     Write the object to the database at the index, including optional metadata.
     
     - parameter index: the `YapDB.Index` to write to.
-    - parameter object: the `AnyObject` which will be written.
-    - parameter metadata: an optional `AnyObject` which will be written as metadata.
+    - parameter object: the `Any` which will be written.
+    - parameter metadata: an optional `Any` which will be written as metadata.
     */
-    func writeAtIndex(index: YapDB.Index, object: AnyObject, metadata: AnyObject?)
+    func writeAtIndex(_ index: YapDB.Index, object: Any, metadata: Any?)
 
     /**
     Remove the sequence object from the database at the indexes (if it exists), including metadata
@@ -309,9 +309,9 @@ public protocol WriteTransactionType: ReadTransactionType {
     - parameter indexes: the `[YapDB.Index]` to remove.
     */
     func removeAtIndexes<
-        Indexes where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index>(indexes: Indexes)
+        Indexes>(_ indexes: Indexes) where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index
 }
 
 /// A facade interface for a database connection.
@@ -330,7 +330,7 @@ public protocol ConnectionType {
     - parameter block: a closure which receives YapDatabaseReadTransaction and returns T
     - returns: An instance of T
     */
-    func read<T>(block: ReadTransaction -> T) -> T
+    func read<T>(_ block: @escaping (ReadTransaction) -> T) -> T
 
     /**
     Synchronously writes to the database on the connection. The closure receives
@@ -343,7 +343,7 @@ public protocol ConnectionType {
     - parameter block: a closure which receives YapDatabaseReadWriteTransaction and returns T
     - returns: An instance of T
     */
-    func write<T>(block: WriteTransaction -> T) -> T
+    func write<T>(_ block: @escaping (WriteTransaction) -> T) -> T
 
     /**
     Asynchronously reads from the database on the connection. The closure receives
@@ -359,7 +359,7 @@ public protocol ConnectionType {
     - parameter queue: a dispatch_queue_t, defaults to main queue, can be ommitted in most cases.
     - parameter completion: a closure which receives T and returns Void.
     */
-    func asyncRead<T>(block: ReadTransaction -> T, queue: dispatch_queue_t, completion: (T) -> Void)
+    func asyncRead<T>(_ block: @escaping (ReadTransaction) -> T, queue: DispatchQueue, completion: @escaping (T) -> Void)
 
     /**
     Asynchronously writes to the database on the connection. The closure receives
@@ -375,7 +375,7 @@ public protocol ConnectionType {
     - parameter queue: a dispatch_queue_t, defaults to main queue, can be ommitted in most cases.
     - parameter completion: a closure which receives T and returns Void.
     */
-    func asyncWrite<T>(block: WriteTransaction -> T, queue: dispatch_queue_t, completion: (T -> Void)?)
+    func asyncWrite<T>(_ block: @escaping (WriteTransaction) -> T, queue: DispatchQueue, completion: ((T) -> Void)?)
 
     /**
     Execute a read/write block inside a `NSOperation`. The block argument receives a
@@ -391,7 +391,7 @@ public protocol ConnectionType {
     - parameter block: a closure of type (YapDatabaseReadWriteTransaction) -> Void
     - returns: an `NSOperation`.
     */
-    func writeBlockOperation(block: WriteTransaction -> Void) -> NSOperation
+    func writeBlockOperation(_ block: @escaping (WriteTransaction) -> Void) -> Operation
 }
 
 /// A facade interface for a database.
@@ -401,9 +401,9 @@ public protocol DatabaseType {
 }
 
 internal enum Handle<D: DatabaseType> {
-    case Transaction(D.Connection.ReadTransaction)
-    case Connection(D.Connection)
-    case Database(D)
+    case transaction(D.Connection.ReadTransaction)
+    case connection(D.Connection)
+    case database(D)
 }
 
 // MARK: - YapDatabaseReadTransaction
@@ -416,28 +416,28 @@ extension YapDatabaseReadTransaction: ReadTransactionType {
     - parameter collection: a String.
     - returns: an array of String values.
     */
-    public func keysInCollection(collection: String) -> [String] {
-        return allKeysInCollection(collection)
+    public func keysInCollection(_ collection: String) -> [String] {
+        return allKeys(inCollection: collection)
     }
 
     /**
     Reads the object sored at this index using the transaction.
 
     - parameter index: The YapDB.Index value.
-    - returns: An optional AnyObject.
+    - returns: An optional Any.
     */
-    public func readAtIndex(index: YapDB.Index) -> AnyObject? {
-        return objectForKey(index.key, inCollection: index.collection)
+    public func readAtIndex(_ index: YapDB.Index) -> Any? {
+        return object(forKey: index.key, inCollection: index.collection)
     }
 
     /**
     Reads any metadata sored at this index using the transaction.
 
     - parameter index: The YapDB.Index value.
-    - returns: An optional AnyObject.
+    - returns: An optional Any.
     */
-    public func readMetadataAtIndex(index: YapDB.Index) -> AnyObject? {
-        return metadataForKey(index.key, inCollection: index.collection)
+    public func readMetadataAtIndex(_ index: YapDB.Index) -> Any? {
+        return metadata(forKey: index.key, inCollection: index.collection)
     }
 }
 
@@ -445,8 +445,8 @@ extension YapDatabaseReadTransaction: ReadTransactionType {
 
 extension YapDatabaseReadWriteTransaction: WriteTransactionType {
 
-    public func writeAtIndex(index: YapDB.Index, object: AnyObject, metadata: AnyObject? = .None) {
-        if let metadata: AnyObject = metadata {
+    public func writeAtIndex(_ index: YapDB.Index, object: Any, metadata: Any? = .none) {
+        if let metadata: Any = metadata {
             setObject(object, forKey: index.key, inCollection: index.collection, withMetadata: metadata)
         }
         else {
@@ -454,19 +454,23 @@ extension YapDatabaseReadWriteTransaction: WriteTransactionType {
         }
     }
 
-    func removeAtIndex(index: YapDB.Index) {
-        removeObjectForKey(index.key, inCollection: index.collection)
+    func removeAtIndex(_ index: YapDB.Index) {
+        removeObject(forKey: index.key, inCollection: index.collection)
     }
 
     public func removeAtIndexes<
-        Indexes where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index>(indexes: Indexes) {
+        Indexes>(_ indexes: Indexes) where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index {
             indexes.forEach(removeAtIndex)
     }
 }
 
 extension YapDatabaseConnection: ConnectionType {
+    public typealias WriteTransaction = YapDatabaseReadWriteTransaction
+
+    public typealias ReadTransaction = YapDatabaseReadTransaction
+
 
     /**
     Synchronously reads from the database on the connection. The closure receives
@@ -479,9 +483,9 @@ extension YapDatabaseConnection: ConnectionType {
     - parameter block: a closure which receives YapDatabaseReadTransaction and returns T
     - returns: An instance of T
     */
-    public func read<T>(block: YapDatabaseReadTransaction -> T) -> T {
-        var result: T! = .None
-        readWithBlock { result = block($0) }
+    public func read<T>(_ block: @escaping (YapDatabaseReadTransaction) -> T) -> T {
+        var result: T! = .none
+        read { result = block($0) }
         return result
     }
 
@@ -496,9 +500,9 @@ extension YapDatabaseConnection: ConnectionType {
     - parameter block: a closure which receives YapDatabaseReadWriteTransaction and returns T
     - returns: An instance of T
     */
-    public func write<T>(block: YapDatabaseReadWriteTransaction -> T) -> T {
-        var result: T! = .None
-        readWriteWithBlock { result = block($0) }
+    public func write<T>(_ block: @escaping (YapDatabaseReadWriteTransaction) -> T) -> T {
+        var result: T! = .none
+        readWrite { result = block($0) }
         return result
     }
 
@@ -516,9 +520,9 @@ extension YapDatabaseConnection: ConnectionType {
     - parameter queue: a dispatch_queue_t, defaults to main queue, can be ommitted in most cases.
     - parameter completion: a closure which receives T and returns Void.
     */
-    public func asyncRead<T>(block: YapDatabaseReadTransaction -> T, queue: dispatch_queue_t = dispatch_get_main_queue(), completion: (T) -> Void) {
-        var result: T! = .None
-        asyncReadWithBlock({ result = block($0) }, completionQueue: queue) { completion(result) }
+    public func asyncRead<T>(_ block: @escaping (YapDatabaseReadTransaction) -> T, queue: DispatchQueue = .main, completion: @escaping (T) -> Void) {
+        var result: T! = .none
+        asyncRead({ result = block($0) }, completionQueue: queue, completionBlock: { completion(result) })
     }
 
     /**
@@ -535,9 +539,9 @@ extension YapDatabaseConnection: ConnectionType {
     - parameter queue: a dispatch_queue_t, defaults to main queue, can be ommitted in most cases.
     - parameter completion: a closure which receives T and returns Void.
     */
-    public func asyncWrite<T>(block: YapDatabaseReadWriteTransaction -> T, queue: dispatch_queue_t = dispatch_get_main_queue(), completion: (T -> Void)?) {
-        var result: T! = .None
-        asyncReadWriteWithBlock({ result = block($0) }, completionQueue: queue) { completion?(result) }
+    public func asyncWrite<T>(_ block: @escaping (YapDatabaseReadWriteTransaction) -> T, queue: DispatchQueue = .main, completion: ((T) -> Void)?) {
+        var result: T! = .none
+        asyncReadWrite({result = block($0)}, completionQueue: queue, completionBlock: { completion?(result) })
     }
 
     /**
@@ -554,8 +558,8 @@ extension YapDatabaseConnection: ConnectionType {
     - parameter block: a closure of type (YapDatabaseReadWriteTransaction) -> Void
     - returns: an `NSOperation`.
     */
-    public func writeBlockOperation(block: (YapDatabaseReadWriteTransaction) -> Void) -> NSOperation {
-        return NSBlockOperation { self.readWriteWithBlock(block) }
+    public func writeBlockOperation(_ block:@escaping (YapDatabaseReadWriteTransaction) -> Void) -> Operation {
+        return BlockOperation { self.readWrite(block) }
     }
 }
 
@@ -598,7 +602,7 @@ extension YapDB.Index: ValueCoding {
 
 // MARK: Coders
 
-public final class YapDBIndexCoder: NSObject, NSCoding, CodingType {
+public final class YapDBIndexCoder: NSObject, NSCoding, CodingProtocol {
     public let value: YapDB.Index
 
     public init(_ v: YapDB.Index) {
@@ -606,33 +610,33 @@ public final class YapDBIndexCoder: NSObject, NSCoding, CodingType {
     }
 
     public required init(coder aDecoder: NSCoder) {
-        let collection = aDecoder.decodeObjectForKey("collection") as! String
-        let key = aDecoder.decodeObjectForKey("key") as! String
+        let collection = aDecoder.decodeObject(forKey: "collection") as! String
+        let key = aDecoder.decodeObject(forKey: "key") as! String
         value = YapDB.Index(collection: collection, key: key)
     }
 
-    public func encodeWithCoder(aCoder: NSCoder) {
-        aCoder.encodeObject(value.collection, forKey: "collection")
-        aCoder.encodeObject(value.key, forKey: "key")
+    public func encode(with aCoder: NSCoder) {
+        aCoder.encode(value.collection, forKey: "collection")
+        aCoder.encode(value.key, forKey: "key")
     }
 }
 
 // MARK: - Deprecations
 
-@available(*, unavailable, renamed="Persistable")
+@available(*, unavailable, renamed: "Persistable")
 public typealias MetadataPersistable = Persistable
 
-@available(*, unavailable, renamed="Persistable")
+@available(*, unavailable, renamed: "Persistable")
 public typealias ObjectMetadataPersistable = Persistable
 
-@available(*, unavailable, renamed="Persistable")
+@available(*, unavailable, renamed: "Persistable")
 public typealias ValueMetadataPersistable = Persistable
 
-@available(*, unavailable, renamed="ValueCoding")
+@available(*, unavailable, renamed: "ValueCoding")
 public typealias Saveable = ValueCoding
 
-@available(*, unavailable, renamed="CodingType")
-public typealias Archiver = CodingType
+@available(*, unavailable, renamed: "CodingType")
+public typealias Archiver = CodingProtocol
 
 
 

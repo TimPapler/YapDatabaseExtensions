@@ -18,92 +18,91 @@ extension Persistable where
     // Writing
 
     /**
-    Write the item using an existing transaction.
+     Write the item using an existing transaction.
 
-    - parameter transaction: a YapDatabaseReadWriteTransaction
-    - returns: the receiver.
-    */
+     - parameter transaction: a YapDatabaseReadWriteTransaction
+     - returns: the receiver.
+     */
     public func write<WriteTransaction: WriteTransactionType>(transaction: WriteTransaction) -> Self {
         return transaction.write(self)
     }
 
     /**
-    Write the item synchronously using a connection.
+     Write the item synchronously using a connection.
 
-    - parameter connection: a YapDatabaseConnection
-    - returns: the receiver.
-    */
+     - parameter connection: a YapDatabaseConnection
+     - returns: the receiver.
+     */
     public func write<Connection: ConnectionType>(connection: Connection) -> Self {
         return connection.write(self)
     }
 
     /**
-    Write the item asynchronously using a connection.
+     Write the item asynchronously using a connection.
 
-    - parameter connection: a YapDatabaseConnection
-    - returns: a closure which receives as an argument the receiver of this function.
-    */
-    public func asyncWrite<Connection: ConnectionType>(connection: Connection, queue: dispatch_queue_t = dispatch_get_main_queue(), completion: (Self -> Void)? = .None) {
+     - parameter connection: a YapDatabaseConnection
+     - returns: a closure which receives as an argument the receiver of this function.
+     */
+    public func asyncWrite<Connection: ConnectionType>(connection: Connection, queue: DispatchQueue = .main, completion: ((Self) -> Void)? = .none) {
         return connection.asyncWrite(self, queue: queue, completion: completion)
     }
 
     /**
-    Write the item synchronously using a connection as an NSOperation
+     Write the item synchronously using a connection as an NSOperation
 
-    - parameter connection: a YapDatabaseConnection
-    - returns: an `NSOperation`
-    */
-    public func writeOperation<Connection: ConnectionType>(connection: Connection) -> NSOperation {
-        return NSBlockOperation { connection.write(self) }
+     - parameter connection: a YapDatabaseConnection
+     - returns: an `NSOperation`
+     */
+    public func writeOperation<Connection: ConnectionType>(connection: Connection) -> Operation {
+        return BlockOperation { _ = connection.write(self) }
     }
 }
 
-extension SequenceType where
-    Generator.Element: Persistable,
-    Generator.Element: NSCoding,
-    Generator.Element.MetadataType: NSCoding {
+extension Sequence where
+    Iterator.Element: Persistable,
+    Iterator.Element: NSCoding,
+    Iterator.Element.MetadataType: NSCoding {
 
     /**
-    Write the items using an existing transaction.
+     Write the items using an existing transaction.
 
-    - parameter transaction: a WriteTransactionType e.g. YapDatabaseReadWriteTransaction
-    - returns: the receiver.
-    */
-    public func write<WriteTransaction: WriteTransactionType>(transaction: WriteTransaction) -> [Generator.Element] {
+     - parameter transaction: a WriteTransactionType e.g. YapDatabaseReadWriteTransaction
+     - returns: the receiver.
+     */
+    public func write<WriteTransaction: WriteTransactionType>(transaction: WriteTransaction) -> [Iterator.Element] {
         return transaction.write(self)
     }
 
     /**
-    Write the items synchronously using a connection.
+     Write the items synchronously using a connection.
 
-    - parameter connection: a ConnectionType e.g. YapDatabaseConnection
-    - returns: the receiver.
-    */
-    public func write<Connection: ConnectionType>(connection: Connection) -> [Generator.Element] {
+     - parameter connection: a ConnectionType e.g. YapDatabaseConnection
+     - returns: the receiver.
+     */
+    public func write<Connection: ConnectionType>(connection: Connection) -> [Iterator.Element] {
         return connection.write(self)
     }
 
     /**
-    Write the items asynchronously using a connection.
+     Write the items asynchronously using a connection.
 
-    - parameter connection: a ConnectionType e.g. YapDatabaseConnection
-    - returns: a closure which receives as an argument the receiver of this function.
-    */
-    public func asyncWrite<Connection: ConnectionType>(connection: Connection, queue: dispatch_queue_t = dispatch_get_main_queue(), completion: ([Generator.Element] -> Void)? = .None) {
+     - parameter connection: a ConnectionType e.g. YapDatabaseConnection
+     - returns: a closure which receives as an argument the receiver of this function.
+     */
+    public func asyncWrite<Connection: ConnectionType>(connection: Connection, queue: DispatchQueue = .main, completion: (([Iterator.Element]) -> Void)? = .none) {
         return connection.asyncWrite(self, queue: queue, completion: completion)
     }
 
     /**
-    Write the item synchronously using a connection as an NSOperation
+     Write the item synchronously using a connection as an NSOperation
 
-    - parameter connection: a YapDatabaseConnection
-    - returns: an `NSOperation`
-    */
-    public func writeOperation<Connection: ConnectionType>(connection: Connection) -> NSOperation {
-        return NSBlockOperation { connection.write(self) }
+     - parameter connection: a YapDatabaseConnection
+     - returns: an `NSOperation`
+     */
+    public func writeOperation<Connection: ConnectionType>(connection: Connection) -> Operation {
+        return BlockOperation { _ = connection.write(self) }
     }
 }
-
 
 // MARK: - Readable
 
@@ -112,39 +111,40 @@ extension Readable where
     ItemType: Persistable,
     ItemType.MetadataType: NSCoding {
 
-    func inTransaction(transaction: Database.Connection.ReadTransaction, atIndex index: YapDB.Index) -> ItemType? {
+    func inTransaction(_ transaction: Database.Connection.ReadTransaction, atIndex index: YapDB.Index) -> ItemType? {
         return transaction.readAtIndex(index)
     }
 
-    func inTransactionAtIndex(transaction: Database.Connection.ReadTransaction) -> YapDB.Index -> ItemType? {
+    func inTransactionAtIndex(_ transaction: Database.Connection.ReadTransaction) -> (YapDB.Index) -> ItemType? {
         return { self.inTransaction(transaction, atIndex: $0) }
     }
 
-    func atIndexInTransaction(index: YapDB.Index) -> Database.Connection.ReadTransaction -> ItemType? {
+    func atIndexInTransaction(index: YapDB.Index) -> (Database.Connection.ReadTransaction) -> ItemType? {
         return { self.inTransaction($0, atIndex: index) }
     }
 
     func atIndexesInTransaction<
-        Indexes where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index>(indexes: Indexes) -> Database.Connection.ReadTransaction -> [ItemType] {
-            let atIndex = inTransactionAtIndex
-            return { indexes.flatMap(atIndex($0)) }
+        Indexes
+    >(indexes: Indexes) -> (Database.Connection.ReadTransaction) -> [ItemType] where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index {
+        let atIndex = inTransactionAtIndex
+        return { indexes.flatMap(atIndex($0)) }
     }
 
-    func inTransaction(transaction: Database.Connection.ReadTransaction, byKey key: String) -> ItemType? {
+    func inTransaction(_ transaction: Database.Connection.ReadTransaction, byKey key: String) -> ItemType? {
         return inTransaction(transaction, atIndex: ItemType.indexWithKey(key))
     }
 
-    func inTransactionByKey(transaction: Database.Connection.ReadTransaction) -> String -> ItemType? {
+    func inTransactionByKey(transaction: Database.Connection.ReadTransaction) -> (String) -> ItemType? {
         return { self.inTransaction(transaction, byKey: $0) }
     }
 
-    func byKeyInTransaction(key: String) -> Database.Connection.ReadTransaction -> ItemType? {
+    func byKeyInTransaction(key: String) -> (Database.Connection.ReadTransaction) -> ItemType? {
         return { self.inTransaction($0, byKey: key) }
     }
 
-    func byKeysInTransaction(keys: [String]? = .None) -> Database.Connection.ReadTransaction -> [ItemType] {
+    func byKeysInTransaction(keys: [String]? = .none) -> (Database.Connection.ReadTransaction) -> [ItemType] {
         let byKey = inTransactionByKey
         return { transaction in
             let keys = keys ?? transaction.keysInCollection(ItemType.collection)
@@ -153,68 +153,67 @@ extension Readable where
     }
 
     /**
-    Reads the item at a given index.
+     Reads the item at a given index.
 
-    - parameter index: a YapDB.Index
-    - returns: an optional `ItemType`
-    */
+     - parameter index: a YapDB.Index
+     - returns: an optional `ItemType`
+     */
     public func atIndex(index: YapDB.Index) -> ItemType? {
-        return sync(atIndexInTransaction(index))
+        return sync(atIndexInTransaction(index: index))
     }
 
     /**
-    Reads the items at the indexes.
+     Reads the items at the indexes.
 
-    - parameter indexes: a SequenceType of YapDB.Index values
-    - returns: an array of `ItemType`
-    */
+     - parameter indexes: a Sequence of YapDB.Index values
+     - returns: an array of `ItemType`
+     */
     public func atIndexes<
-        Indexes where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index>(indexes: Indexes) -> [ItemType] {
-            return sync(atIndexesInTransaction(indexes))
+        Indexes
+    >(indexes: Indexes) -> [ItemType]
+        where Indexes: Sequence, Indexes.Iterator.Element == YapDB.Index {
+        return sync(atIndexesInTransaction(indexes: indexes))
     }
 
     /**
-    Reads the item at the key.
+     Reads the item at the key.
 
-    - parameter key: a String
-    - returns: an optional `ItemType`
-    */
+     - parameter key: a String
+     - returns: an optional `ItemType`
+     */
     public func byKey(key: String) -> ItemType? {
-        return sync(byKeyInTransaction(key))
+        return sync(byKeyInTransaction(key: key))
     }
 
     /**
-    Reads the items by the keys.
+     Reads the items by the keys.
 
-    - parameter keys: a SequenceType of String values
-    - returns: an array of `ItemType`
-    */
-    public func byKeys<
-        Keys where
-        Keys: SequenceType,
-        Keys.Generator.Element == String>(keys: Keys) -> [ItemType] {
-            return sync(byKeysInTransaction(Array(keys)))
+     - parameter keys: a Sequence of String values
+     - returns: an array of `ItemType`
+     */
+    public func byKeys<Keys>(keys: Keys) -> [ItemType]
+        where Keys: Sequence,
+        Keys.Iterator.Element == String {
+        return sync(byKeysInTransaction(keys: Array(keys)))
     }
 
     /**
-    Reads all the `ItemType` in the database.
+     Reads all the `ItemType` in the database.
 
-    - returns: an array of `ItemType`
-    */
+     - returns: an array of `ItemType`
+     */
     public func all() -> [ItemType] {
         return sync(byKeysInTransaction())
     }
 
     /**
-    Returns th existing items and missing keys..
+     Returns th existing items and missing keys..
 
-    - parameter keys: a SequenceType of String values
-    - returns: a tuple of type `([ItemType], [String])`
-    */
+     - parameter keys: a Sequence of String values
+     - returns: a tuple of type `([ItemType], [String])`
+     */
     public func filterExisting(keys: [String]) -> (existing: [ItemType], missing: [String]) {
-        let existingInTransaction = byKeysInTransaction(keys)
+        let existingInTransaction = byKeysInTransaction(keys: keys)
         return sync { transaction -> ([ItemType], [String]) in
             let existing = existingInTransaction(transaction)
             let existingKeys = existing.map(keyForPersistable)
@@ -223,4 +222,3 @@ extension Readable where
         }
     }
 }
-

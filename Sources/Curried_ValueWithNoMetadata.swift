@@ -14,7 +14,7 @@ import ValueCoding
 extension Persistable where
     Self: ValueCoding,
     Self.Coder: NSCoding,
-    Self.Coder.ValueType == Self,
+    Self.Coder.Value == Self,
     Self.MetadataType == Void {
 
     /**
@@ -25,8 +25,8 @@ extension Persistable where
     - returns: a (ReadTransaction) -> Self? closure.
     */
     public static func readAtIndex<
-        ReadTransaction where
-        ReadTransaction: ReadTransactionType>(index: YapDB.Index) -> ReadTransaction -> Self? {
+        ReadTransaction>(_ index: YapDB.Index) -> (ReadTransaction) -> Self? where
+        ReadTransaction: ReadTransactionType {
             return { $0.readAtIndex(index) }
     }
 
@@ -34,14 +34,14 @@ extension Persistable where
     Returns a closure which, given a read transaction will return
     the items at the given indexes.
 
-    - parameter indexes: a SequenceType of YapDB.Index values
+    - parameter indexes: a Sequence of YapDB.Index values
     - returns: a (ReadTransaction) -> [Self] closure.
     */
     public static func readAtIndexes<
-        Indexes, ReadTransaction where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index,
-        ReadTransaction: ReadTransactionType>(indexes: Indexes) -> ReadTransaction -> [Self] {
+        Indexes, ReadTransaction>(_ indexes: Indexes) -> (ReadTransaction) -> [Self] where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index,
+        ReadTransaction: ReadTransactionType {
             return { $0.readAtIndexes(indexes) }
     }
 
@@ -53,8 +53,8 @@ extension Persistable where
     - returns: a (ReadTransaction) -> Self? closure.
     */
     public static func readByKey<
-        ReadTransaction where
-        ReadTransaction: ReadTransactionType>(key: String) -> ReadTransaction -> Self? {
+        ReadTransaction>(_ key: String) -> (ReadTransaction) -> Self? where
+        ReadTransaction: ReadTransactionType {
             return { $0.readByKey(key) }
     }
 
@@ -62,14 +62,14 @@ extension Persistable where
     Returns a closure which, given a read transaction will return
     the items at the given keys.
 
-    - parameter keys: a SequenceType of String values
+    - parameter keys: a Sequence of String values
     - returns: a (ReadTransaction) -> [Self] closure.
     */
     public static func readByKeys<
-        Keys, ReadTransaction where
-        Keys: SequenceType,
-        Keys.Generator.Element == String,
-        ReadTransaction: ReadTransactionType>(keys: Keys) -> ReadTransaction -> [Self] {
+        Keys, ReadTransaction>(_ keys: Keys) -> (ReadTransaction) -> [Self] where
+        Keys: Sequence,
+        Keys.Iterator.Element == String,
+        ReadTransaction: ReadTransactionType {
             return  { $0.readAtIndexes(Self.indexesWithKeys(keys)) }
     }
 
@@ -80,7 +80,7 @@ extension Persistable where
     - warning: Be aware that this will capure `self`.
     - returns: a (WriteTransaction) -> Self closure
     */
-    public func write<WriteTransaction: WriteTransactionType>() -> WriteTransaction -> Self {
+    public func write<WriteTransaction: WriteTransactionType>() -> (WriteTransaction) -> Self {
         return { $0.write(self) }
     }
 }

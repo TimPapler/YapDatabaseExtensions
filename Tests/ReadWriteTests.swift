@@ -39,17 +39,17 @@ class ReadWriteBaseTests: XCTestCase {
 
     func createPersistables() {
         item = Employee(id: "beatle-1", name: "John")
-        item.metadata = NSDate()
+        item.metadata = Date()
         items = [
             item,
             Employee(id: "beatle-2", name: "Paul"),
             Employee(id: "beatle-3", name: "George"),
             Employee(id: "beatle-4", name: "Ringo")
         ]
-        items.suffixFrom(1).forEach { $0.metadata = NSDate() }
+        items.suffix(from: 1).forEach { $0.metadata = Date() }
     }
 
-    func writeItemsToDatabase(db: YapDatabase) {
+    func writeItemsToDatabase(_ db: YapDatabase) {
         db.makeNewConnection().write(items)
     }
 }

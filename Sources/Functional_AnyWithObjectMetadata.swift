@@ -21,21 +21,21 @@ extension ReadTransactionType {
     - returns: an optional `MetadataType`
     */
     public func readMetadataAtIndex<
-        MetadataType: NSCoding>(index: YapDB.Index) -> MetadataType? {
+        MetadataType: NSCoding>(_ index: YapDB.Index) -> MetadataType? {
             return readMetadataAtIndex(index) as? MetadataType
     }
 
     /**
     Reads the metadata at the indexes.
 
-    - parameter indexes: a SequenceType of YapDB.Index values
+    - parameter indexes: a Sequence of YapDB.Index values
     - returns: an array of `MetadataType`
     */
     public func readMetadataAtIndexes<
-        Indexes, MetadataType where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index,
-        MetadataType: NSCoding>(indexes: Indexes) -> [MetadataType] {
+        Indexes, MetadataType>(_ indexes: Indexes) -> [MetadataType] where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index,
+        MetadataType: NSCoding {
             return indexes.flatMap(readMetadataAtIndex)
     }
 }
@@ -49,21 +49,21 @@ extension ConnectionType {
     - returns: an optional `MetadataType`
     */
     public func readMetadataAtIndex<
-        MetadataType: NSCoding>(index: YapDB.Index) -> MetadataType? {
+        MetadataType: NSCoding>(_ index: YapDB.Index) -> MetadataType? {
             return read { $0.readMetadataAtIndex(index) }
     }
 
     /**
     Reads the metadata at the indexes.
 
-    - parameter indexes: a SequenceType of YapDB.Index values
+    - parameter indexes: a Sequence of YapDB.Index values
     - returns: an array of `MetadataType`
     */
     public func readMetadataAtIndexes<
-        Indexes, MetadataType where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index,
-        MetadataType: NSCoding>(indexes: Indexes) -> [MetadataType] {
+        Indexes, MetadataType>(_ indexes: Indexes) -> [MetadataType] where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index,
+        MetadataType: NSCoding {
             return read { $0.readMetadataAtIndexes(indexes) }
     }
 }

@@ -21,30 +21,30 @@ extension ReadTransactionType {
     - returns: an optional `ItemType`
     */
     public func readAtIndex<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ index: YapDB.Index) -> ObjectWithObjectMetadata? where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(index: YapDB.Index) -> ObjectWithObjectMetadata? {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             if var item = readAtIndex(index) as? ObjectWithObjectMetadata {
                 item.metadata = readMetadataAtIndex(index)
                 return item
             }
-            return .None
+            return .none
     }
 
     /**
     Reads the items at the indexes.
 
-    - parameter indexes: a SequenceType of YapDB.Index values
+    - parameter indexes: a Sequence of YapDB.Index values
     - returns: an array of `ItemType`
     */
     public func readAtIndexes<
-        Indexes, ObjectWithObjectMetadata where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index,
+        Indexes, ObjectWithObjectMetadata>(_ indexes: Indexes) -> [ObjectWithObjectMetadata] where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(indexes: Indexes) -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return indexes.flatMap(readAtIndex)
     }
 
@@ -55,26 +55,26 @@ extension ReadTransactionType {
     - returns: an optional `ItemType`
     */
     public func readByKey<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ key: String) -> ObjectWithObjectMetadata? where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(key: String) -> ObjectWithObjectMetadata? {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return readAtIndex(ObjectWithObjectMetadata.indexWithKey(key))
     }
 
     /**
     Reads the items by the keys.
 
-    - parameter keys: a SequenceType of String values
+    - parameter keys: a Sequence of String values
     - returns: an array of `ItemType`
     */
     public func readByKeys<
-        Keys, ObjectWithObjectMetadata where
-        Keys: SequenceType,
-        Keys.Generator.Element == String,
+        Keys, ObjectWithObjectMetadata>(_ keys: Keys) -> [ObjectWithObjectMetadata] where
+        Keys: Sequence,
+        Keys.Iterator.Element == String,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(keys: Keys) -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return readAtIndexes(ObjectWithObjectMetadata.indexesWithKeys(keys))
     }
 
@@ -84,10 +84,10 @@ extension ReadTransactionType {
     - returns: an array of `ItemType`
     */
     public func readAll<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>() -> [ObjectWithObjectMetadata] where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>() -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return readByKeys(keysInCollection(ObjectWithObjectMetadata.collection))
     }
 }
@@ -101,26 +101,26 @@ extension ConnectionType {
     - returns: an optional `ItemType`
     */
     public func readAtIndex<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ index: YapDB.Index) -> ObjectWithObjectMetadata? where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(index: YapDB.Index) -> ObjectWithObjectMetadata? {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return read { $0.readAtIndex(index) }
     }
 
     /**
     Reads the items at the indexes.
 
-    - parameter indexes: a SequenceType of YapDB.Index values
+    - parameter indexes: a Sequence of YapDB.Index values
     - returns: an array of `ItemType`
     */
     public func readAtIndexes<
-        Indexes, ObjectWithObjectMetadata where
-        Indexes: SequenceType,
-        Indexes.Generator.Element == YapDB.Index,
+        Indexes, ObjectWithObjectMetadata>(_ indexes: Indexes) -> [ObjectWithObjectMetadata] where
+        Indexes: Sequence,
+        Indexes.Iterator.Element == YapDB.Index,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(indexes: Indexes) -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return read { $0.readAtIndexes(indexes) }
     }
 
@@ -131,26 +131,26 @@ extension ConnectionType {
     - returns: an optional `ItemType`
     */
     public func readByKey<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ key: String) -> ObjectWithObjectMetadata? where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(key: String) -> ObjectWithObjectMetadata? {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return readAtIndex(ObjectWithObjectMetadata.indexWithKey(key))
     }
 
     /**
     Reads the items by the keys.
 
-    - parameter keys: a SequenceType of String values
+    - parameter keys: a Sequence of String values
     - returns: an array of `ItemType`
     */
     public func readByKeys<
-        Keys, ObjectWithObjectMetadata where
-        Keys: SequenceType,
-        Keys.Generator.Element == String,
+        Keys, ObjectWithObjectMetadata>(_ keys: Keys) -> [ObjectWithObjectMetadata] where
+        Keys: Sequence,
+        Keys.Iterator.Element == String,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(keys: Keys) -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return readAtIndexes(ObjectWithObjectMetadata.indexesWithKeys(keys))
     }
 
@@ -160,10 +160,10 @@ extension ConnectionType {
     - returns: an array of `ItemType`
     */
     public func readAll<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>() -> [ObjectWithObjectMetadata] where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>() -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return read { $0.readAll() }
     }
 }
@@ -178,10 +178,10 @@ extension WriteTransactionType {
     - parameter item: the item to store.
     */
     public func write<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ item: ObjectWithObjectMetadata) -> ObjectWithObjectMetadata where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(item: ObjectWithObjectMetadata) -> ObjectWithObjectMetadata {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             writeAtIndex(item.index, object: item, metadata: item.metadata)
             return item
     }
@@ -189,15 +189,15 @@ extension WriteTransactionType {
     /**
     Write the items to the database using the transaction.
 
-    - parameter items: a SequenceType of items to store.
+    - parameter items: a Sequence of items to store.
     */
     public func write<
-        Items, ObjectWithObjectMetadata where
-        Items: SequenceType,
-        Items.Generator.Element == ObjectWithObjectMetadata,
+        Items, ObjectWithObjectMetadata>(_ items: Items) -> [ObjectWithObjectMetadata] where
+        Items: Sequence,
+        Items.Iterator.Element == ObjectWithObjectMetadata,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(items: Items) -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return items.map(write)
     }
 }
@@ -210,25 +210,25 @@ extension ConnectionType {
     - parameter item: the item to store.
     */
     public func write<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ item: ObjectWithObjectMetadata) -> ObjectWithObjectMetadata where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(item: ObjectWithObjectMetadata) -> ObjectWithObjectMetadata {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return write { $0.write(item) }
     }
 
     /**
     Write the items to the database synchronously using the connection in a new transaction.
 
-    - parameter items: a SequenceType of items to store.
+    - parameter items: a Sequence of items to store.
     */
     public func write<
-        Items, ObjectWithObjectMetadata where
-        Items: SequenceType,
-        Items.Generator.Element == ObjectWithObjectMetadata,
+        Items, ObjectWithObjectMetadata>(_ items: Items) -> [ObjectWithObjectMetadata] where
+        Items: Sequence,
+        Items.Iterator.Element == ObjectWithObjectMetadata,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(items: Items) -> [ObjectWithObjectMetadata] {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             return write { $0.write(items) }
     }
 
@@ -240,27 +240,27 @@ extension ConnectionType {
     - parameter completion: a dispatch_block_t for completion.
     */
     public func asyncWrite<
-        ObjectWithObjectMetadata where
+        ObjectWithObjectMetadata>(_ item: ObjectWithObjectMetadata, queue: DispatchQueue = DispatchQueue.main, completion: ((ObjectWithObjectMetadata) -> Void)? = .none) where
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(item: ObjectWithObjectMetadata, queue: dispatch_queue_t = dispatch_get_main_queue(), completion: (ObjectWithObjectMetadata -> Void)? = .None) {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             asyncWrite({ $0.write(item) }, queue: queue, completion: completion)
     }
 
     /**
     Write the items to the database asynchronously using the connection in a new transaction.
 
-    - parameter items: a SequenceType of items to store.
+    - parameter items: a Sequence of items to store.
     - parameter queue: the dispatch_queue_t to run the completion block on.
     - parameter completion: a dispatch_block_t for completion.
     */
     public func asyncWrite<
-        Items, ObjectWithObjectMetadata where
-        Items: SequenceType,
-        Items.Generator.Element == ObjectWithObjectMetadata,
+        Items, ObjectWithObjectMetadata>(_ items: Items, queue: DispatchQueue = DispatchQueue.main, completion: (([ObjectWithObjectMetadata]) -> Void)? = .none) where
+        Items: Sequence,
+        Items.Iterator.Element == ObjectWithObjectMetadata,
         ObjectWithObjectMetadata: Persistable,
         ObjectWithObjectMetadata: NSCoding,
-        ObjectWithObjectMetadata.MetadataType: NSCoding>(items: Items, queue: dispatch_queue_t = dispatch_get_main_queue(), completion: ([ObjectWithObjectMetadata] -> Void)? = .None) {
+        ObjectWithObjectMetadata.MetadataType: NSCoding {
             asyncWrite({ $0.write(items) }, queue: queue, completion: completion)
     }
 }
